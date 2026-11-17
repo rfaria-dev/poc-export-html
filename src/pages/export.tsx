@@ -21,8 +21,36 @@ type ChartType = keyof typeof chartData;
 
 export const Export = () => {
   const [selectedChart, setSelectedChart] = useState<ChartType>("vendas");
+  const [downloading, setDownloading] = useState(false);
 
   const currentData = chartData[selectedChart];
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const response = await fetch("/export.html");
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "export.html";
+      anchor.click();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      alert(
+        'O arquivo único ainda não foi gerado. Rode "npm run build" e tente novamente.'
+      );
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <Stack sx={{ border: "solid white 1px", p: 3, gap: 3 }}>
@@ -55,6 +83,10 @@ export const Export = () => {
         categories={currentData.categories}
         data={currentData.data}
       />
+
+      <Button variant="contained" onClick={handleDownload} disabled={downloading}>
+        {downloading ? "Baixando..." : "Baixar HTML único"}
+      </Button>
     </Stack>
   );
 };
